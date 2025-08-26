@@ -130,8 +130,12 @@ QTTranslator::sendQTEvent(QEvent* event, float activationTime) const
                 //  is that in many cases this code causes the control modifier
                 //  to be lost.
                 //
-                if (m_modifiers & Qt::ControlModifier ||
-                    m_modifiers & Qt::MetaModifier)
+                // Alt modifier included in handling, as a mismatch can
+                // occur when pressing Alt + Shift. Qt can incorrectly
+                // substitute Meta button for Alt on key up.
+                if (m_modifiers & Qt::ControlModifier
+                    || m_modifiers & Qt::AltModifier
+                    || m_modifiers & Qt::MetaModifier)
                 {
                     m_modifiers = inputEvent->modifiers() & 0xffff0000;
                 }
