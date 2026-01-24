@@ -164,7 +164,7 @@ namespace IPCore
             }
         }
 
-        updateConfig();
+        updateConfig(true);
     }
 
     OCIOIPNode::~OCIOIPNode()
@@ -176,7 +176,7 @@ namespace IPCore
         delete m_state;
     }
 
-    void OCIOIPNode::updateConfig()
+    void OCIOIPNode::updateConfig(const bool initializing)
     {
         try
         {
@@ -232,7 +232,10 @@ namespace IPCore
         m_state->shaderID = "";
 
         updateContext();
-        updateFunction();
+        if (!initializing)
+        {
+            updateFunction();
+        }
     }
 
     void OCIOIPNode::updateContext()
@@ -519,7 +522,7 @@ namespace IPCore
         boost::hash<string> string_hash;
         string inName = stringProp("ocio.inColorSpace", m_state->linear);
 
-        if (inName.empty())
+        if (inName.empty() && !useRawConfig())
             return;
 
         try
