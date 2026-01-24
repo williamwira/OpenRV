@@ -162,7 +162,7 @@ namespace IPCore
             }
         }
 
-        updateConfig();
+        updateConfig(true);
     }
 
     OCIOIPNode::~OCIOIPNode()
@@ -172,7 +172,7 @@ namespace IPCore
         delete m_state;
     }
 
-    void OCIOIPNode::updateConfig()
+    void OCIOIPNode::updateConfig(const bool initializing)
     {
         try
         {
@@ -234,7 +234,10 @@ namespace IPCore
         m_state->shaderID = "";
 
         updateContext();
-        updateFunction();
+        if (!initializing)
+        {
+            updateFunction();
+        }
     }
 
     void OCIOIPNode::updateContext()
@@ -345,8 +348,7 @@ namespace IPCore
         if (!m_matrix_rec709_to_xyz)
         {
             m_matrix_rec709_to_xyz = createMatrixTransformXYZToRec709();
-            m_matrix_rec709_to_xyz->setDirection(
-                OCIO::TRANSFORM_DIR_INVERSE);
+            m_matrix_rec709_to_xyz->setDirection(OCIO::TRANSFORM_DIR_INVERSE);
         }
 
         return m_matrix_rec709_to_xyz;
@@ -362,8 +364,8 @@ namespace IPCore
         boost::hash<string> string_hash;
         string inName = stringProp("ocio.inColorSpace", m_state->linear);
 
-	if (inName.empty())
-	    return;
+        if (inName.empty() && !useRawConfig())
+            return;
 
         try
         {
@@ -378,7 +380,8 @@ namespace IPCore
                 //  Emulate the nuke OCIOColor node
                 //
 
-                string outName = stringProp("ocio_color.outColorSpace", m_state->linear);
+                string outName =
+                    stringProp("ocio_color.outColorSpace", m_state->linear);
                 OCIO::ConstColorSpaceRcPtr dstCS =
                     m_state->config->getColorSpace(outName.c_str());
                 processor = m_state->config->getProcessor(m_state->context,
@@ -441,7 +444,8 @@ namespace IPCore
 
                 OCIO::DisplayViewTransformRcPtr transform =
                     OCIO::DisplayViewTransform::Create();
-                string display = stringProp("ocio_display.display", m_state->display);
+                string display =
+                    stringProp("ocio_display.display", m_state->display);
                 string view = stringProp("ocio_display.view", m_state->view);
 
                 transform->setSrc(inName.c_str());
@@ -481,8 +485,7 @@ namespace IPCore
                         // cache.
                         static int uniqueCounter = 0;
                         inTransformURL =
-                            name() + "." + std::to_string(uniqueCounter++)
-                            + "."
+                            name() + "." + std::to_string(uniqueCounter++) + "."
                             + ConfigIOProxy::USE_IN_TRANSFORM_DATA_PROPERTY;
                     }
 
@@ -605,7 +608,7 @@ namespace IPCore
 
                 m_state->function = new Shader::Function(
                     shaderDesc->getFunctionName(), glsl,
-                    Shader::Function::Color, numTextures+num3DTextures);
+                    Shader::Function::Color, numTextures + num3DTextures);
                 m_state->shaderID = shaderCacheID;
 
                 if (Shader::debuggingType() != Shader::NoDebugInfo)
