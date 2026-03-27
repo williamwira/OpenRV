@@ -20,7 +20,9 @@ SET(_download_hash
     "${RV_DEPS_AJA_DOWNLOAD_HASH}"
 )
 
-IF(RV_TARGET_WINDOWS)
+IF(RV_TARGET_WINDOWS
+   AND CMAKE_BUILD_TYPE MATCHES "^Debug$"
+)
   RV_MAKE_STANDARD_LIB_NAME(ajantv2_vs143_MT "" "SHARED" "d")
 ELSE()
   RV_MAKE_STANDARD_LIB_NAME(ajantv2 "" "SHARED" "d")
@@ -32,28 +34,6 @@ SET(_aja_ntv2_include_dir
 SET(_aja_include_dir
     ${_include_dir}/libajantv2
 )
-
-IF(RHEL_VERBOSE)
-  SET(_mbedtls_lib_dir
-      ${_build_dir}/ajantv2/mbedtls-install/lib64
-  )
-ELSE()
-  SET(_mbedtls_lib_dir
-      ${_build_dir}/ajantv2/mbedtls-install/lib
-  )
-ENDIF()
-
-SET(_mbedtls_lib
-    ${_mbedtls_lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX}mbedtls${CMAKE_STATIC_LIBRARY_SUFFIX}
-)
-SET(_mbedx509_lib
-    ${_mbedtls_lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX}mbedx509${CMAKE_STATIC_LIBRARY_SUFFIX}
-)
-SET(_mbedcrypto_lib
-    ${_mbedtls_lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX}mbedcrypto${CMAKE_STATIC_LIBRARY_SUFFIX}
-)
-
-LIST(APPEND _byproducts ${_mbedtls_lib} ${_mbedx509_lib} ${_mbedcrypto_lib})
 
 # There is an issue with the recent AJA SDK : the OS specific header files are no longer copied to _aja_ntv2_include_dir Adding custom paths here to work around
 # this issue
@@ -71,7 +51,17 @@ ELSEIF(RV_TARGET_WINDOWS)
   )
 ENDIF()
 
-LIST(APPEND _configure_options "-DAJANTV2_DISABLE_DEMOS=ON" "-DAJANTV2_DISABLE_TOOLS=ON" "-DAJANTV2_DISABLE_TESTS=ON" "-DAJANTV2_BUILD_SHARED=ON")
+LIST(
+  APPEND
+  _configure_options
+  "-DAJANTV2_DISABLE_DEMOS=ON"
+  "-DAJANTV2_DISABLE_TOOLS=ON"
+  "-DAJANTV2_DISABLE_TESTS=ON"
+  "-DAJANTV2_BUILD_SHARED=ON"
+  "-DAJANTV2_DISABLE_PLUGIN_LOAD=ON"
+  "-DAJANTV2_DISABLE_DRIVER=ON"
+  "-DNTV2_VERSION_BUILD=0"
+)
 
 # In Debug, the MSVC runtime library needs to be set to MultiThreadedDebug. Otherwise, it will be set to MultiThreaded.
 IF(RV_TARGET_WINDOWS
@@ -92,7 +82,7 @@ EXTERNALPROJECT_ADD(
   INSTALL_DIR ${_install_dir}
   CONFIGURE_COMMAND ${CMAKE_COMMAND} ${_configure_options}
   BUILD_COMMAND ${_cmake_build_command}
-  INSTALL_COMMAND ${_cmake_install_command} && ${CMAKE_COMMAND} -E copy_directory ${_mbedtls_lib_dir} ${_lib_dir}
+  INSTALL_COMMAND ${_cmake_install_command}
   BUILD_IN_SOURCE FALSE
   BUILD_ALWAYS FALSE
   BUILD_BYPRODUCTS ${_byproducts}
@@ -122,11 +112,6 @@ FILE(MAKE_DIRECTORY ${_aja_include_dir} ${_aja_ntv2_include_dir} ${_aja_ntv2_os_
 TARGET_INCLUDE_DIRECTORIES(
   aja::ntv2
   INTERFACE ${_aja_include_dir} ${_aja_ntv2_include_dir} ${_aja_ntv2_os_specific_include_dir}
-)
-
-TARGET_LINK_LIBRARIES(
-  aja::ntv2
-  INTERFACE ${_mbedtls_lib} ${_mbedx509_lib} ${_mbedcrypto_lib}
 )
 
 IF(RV_TARGET_DARWIN)
