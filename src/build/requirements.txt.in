@@ -12,7 +12,7 @@ wheel==0.43.0           # License: MIT License (MIT)
 numpy==@_numpy_version@ # License: BSD License (BSD-3-Clause) - Required by PySide6
 opentimelineio==@_opentimelineio_version@ # License: Other/Proprietary License (Modified Apache 2.0 License)
 PyOpenGL==3.1.7         # License: BSD License (BSD)
-PyOpenGL_accelerate==3.1.10 # License: BSD License (BSD) - v3.1.10 includes Python 3 fix for Cython compatibility
+#PyOpenGL_accelerate==3.1.10 # License: BSD License (BSD) - v3.1.10 includes Python 3 fix for Cython compatibility
 
 # Additional packages required by RV and for testing the Python distribution
 
@@ -20,5 +20,5 @@ certifi==2024.2.2       # License: Mozilla Public License 2.0 (MPL 2.0) (MPL-2.0
 six==1.16.0             # License: MIT License (MIT)
 packaging==24.0         # License: Apache Software License, BSD License
 requests==2.31.0        # License: Apache Software License (Apache 2.0)
-cryptography==42.0.5    # License: Apache Software License, BSD License ((Apache-2.0 OR BSD-3-Clause) AND PSF-2.0)
+cryptography<42 # License: Apache Software License, BSD License ((Apache-2.0 OR BSD-3-Clause) AND PSF-2.0)
 pydantic==2.7.1         # License: MIT License (MIT)
