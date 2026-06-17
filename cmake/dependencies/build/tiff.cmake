@@ -28,8 +28,9 @@ LIST(APPEND _configure_options "-Dwebp=OFF")
 LIST(APPEND _configure_options "-Dzlib=ON")
 LIST(APPEND _configure_options "-Dzstd=OFF")
 
-# Do not need TIFF tools.
+# Do not need TIFF tools or docs.
 LIST(APPEND _configure_options "-Dtiff-tools=OFF")
+LIST(APPEND _configure_options "-Dtiff-docs=OFF")
 
 EXTERNALPROJECT_ADD(
   ${_target}
