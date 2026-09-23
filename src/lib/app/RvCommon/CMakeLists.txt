@@ -407,10 +407,11 @@ TARGET_LINK_LIBRARIES(
 )
 
 IF(RV_TARGET_DARWIN)
+  # ApplicationServices is required for ColorSync, used by DesktopVideoDevice::colorProfile()
   TARGET_LINK_LIBRARIES(
     ${_target}
     PUBLIC TwkGLFCoreGraphics
-    PRIVATE "-framework CoreVideo"
+    PRIVATE "-framework CoreVideo" "-framework ApplicationServices"
   )
 ENDIF()
 

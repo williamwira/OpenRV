@@ -13,6 +13,11 @@
 #include <lcms2.h>
 #endif
 
+#ifdef PLATFORM_DARWIN
+// Framework provides ColorSync and CoreGraphics
+#include <ApplicationServices/ApplicationServices.h>
+#endif
+
 #include <RvCommon/DesktopVideoDevice.h>
 #include <TwkGLF/GLPipeline.h>
 #include <TwkGLF/GLRenderPrimitives.h>
@@ -911,6 +916,104 @@ namespace Rv
         {
             m_colorProfile = ColorProfile();
         }
+
+        return m_colorProfile;
+    }
+#endif
+
+#ifdef PLATFORM_DARWIN
+    namespace
+    {
+        //
+        // Map a Qt screen index to a CGDirectDisplayID by comparing geometry.
+        // This is the inverse of CGDesktopVideoDeviceArm::qtScreenFromCG() and
+        // makes the same assumption: QScreen::geometry() and CGDisplayBounds()
+        // agree for a given display.
+        //
+        bool cgDisplayForQtScreen(int qtScreen, CGDirectDisplayID& out)
+        {
+            const QList<QScreen*> screens = QGuiApplication::screens();
+
+            if (qtScreen < 0 || qtScreen >= screens.size())
+                return false;
+
+            const QRect qtBounds = screens[qtScreen]->geometry();
+
+            uint32_t count = 0;
+            CGDirectDisplayID ids[64] = {0};
+
+            if (CGGetOnlineDisplayList(64, ids, &count) != kCGErrorSuccess)
+                return false;
+
+            for (uint32_t i = 0; i < count; i++)
+            {
+                const CGRect b = CGDisplayBounds(ids[i]);
+                const QRect cgBounds(b.origin.x, b.origin.y, b.size.width, b.size.height);
+
+                if (cgBounds == qtBounds)
+                {
+                    out = ids[i];
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+    } // namespace
+
+    TwkApp::VideoDevice::ColorProfile DesktopVideoDevice::colorProfile() const
+    {
+        //
+        // Get the display's color sync profile. Ported from
+        // CGDesktopVideoDevice::colorProfile(), which is no longer built.
+
+        CGDirectDisplayID cgScreen = 0;
+
+        if (!cgDisplayForQtScreen(m_screen, cgScreen))
+        {
+            m_colorProfile = ColorProfile();
+            return m_colorProfile;
+        }
+
+        ColorSyncProfileRef iccRef = ColorSyncProfileCreateWithDisplayID(cgScreen);
+
+        if (!iccRef)
+        {
+            m_colorProfile = ColorProfile();
+            return m_colorProfile;
+        }
+
+        // Reset first so a partial lookup below cannot leave stale fields
+        // from a previous call.
+        m_colorProfile = ColorProfile();
+        m_colorProfile.type = ICCProfile;
+
+        if (CFStringRef desc = ColorSyncProfileCopyDescriptionString(iccRef))
+        {
+            vector<char> buffer(CFStringGetLength(desc) * 4 + 1);
+
+            if (CFStringGetCString(desc, &buffer.front(), buffer.size(), kCFStringEncodingUTF8))
+            {
+                m_colorProfile.description = &buffer.front();
+            }
+
+            CFRelease(desc);
+        }
+
+        // ColorSyncProfileGetURL() is a Get, so the URL must not be released.
+        if (CFURLRef url = ColorSyncProfileGetURL(iccRef, NULL))
+        {
+            if (CFStringRef urlstr = CFURLGetString(url))
+            {
+                vector<char> buffer(CFStringGetLength(urlstr) * 4 + 1);
+
+                if (CFStringGetCString(urlstr, &buffer.front(), buffer.size(), kCFStringEncodingUTF8))
+                    m_colorProfile.url = &buffer.front();
+            }
+        }
+
+        CFRelease(iccRef);
 
         return m_colorProfile;
     }
