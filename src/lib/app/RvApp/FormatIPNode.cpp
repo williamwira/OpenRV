@@ -199,7 +199,7 @@ namespace IPCore
 
     void FormatIPNode::outputDisconnect(IPNode* node) { IPNode::outputDisconnect(node); }
 
-    static FrameBuffer* resizeImage(FrameBuffer* in, float sx, float sy, FrameBuffer::DataType outType)
+    static FrameBuffer* resizeImage(FrameBuffer* in, float sx, float sy, FrameBuffer::DataType outType, bool force = false)
     {
         //
         //  sx here is really representing outWidth/inWidth (both integers), but
@@ -210,7 +210,7 @@ namespace IPCore
         int ow = int(0.49f + float(in->width()) * sx);
         int oh = int(0.49f + float(in->height()) * sy);
 
-        if (ow != in->width() || oh != in->height() || outType != in->dataType())
+        if (force || ow != in->width() || oh != in->height() || outType != in->dataType())
         {
             /*
             cout << "resize from " << in->width() << ", " << in->height()
@@ -221,7 +221,7 @@ namespace IPCore
             if (fb->isRootPlane())
                 fb->idstream() << in->identifier();
             if (in->nextPlane())
-                fb->appendPlane(resizeImage(in->nextPlane(), sx, sy, outType));
+                fb->appendPlane(resizeImage(in->nextPlane(), sx, sy, outType, true));
             return fb;
         }
         else
