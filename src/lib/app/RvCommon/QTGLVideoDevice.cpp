@@ -100,29 +100,23 @@ namespace Rv
         return 0;
     }
 
-    void QTGLVideoDevice::setPhysicalDevice(VideoDevice* d)
+    void QTGLVideoDevice::setPhysicalDevice(VideoDevice* d) { TwkGLF::GLVideoDevice::setPhysicalDevice(d); }
+
+    float QTGLVideoDevice::devicePixelRatio() const
     {
-        TwkGLF::GLVideoDevice::setPhysicalDevice(d);
-
-        // Update the DevicePixelRatio associated with the physical device.
-        // This is important for high DPI displays, where the device pixel ratio
-        // may differ from the logical pixel ratio on a per screen basis.
-        m_devicePixelRatio = 1.0f;
-
+        // Query the widget live rather caching the ratio from the
+        // physical device. Qt updates the widget's ratio whenver its window
+        // changes screens, and it always matches the FBO that Qt allocated. A
+        // ratio cached from the physical device will go stale when monitors
+        // are hot-plugged, because the desktop device list (and its screen
+        // indices) is only built once at startup.
         static bool noQtHighDPISupport = getenv("RV_NO_QT_HDPI_SUPPORT") != nullptr;
-        if (noQtHighDPISupport)
+        if (noQtHighDPISupport || !m_view)
         {
-            return;
+            return 1.0f;
         }
 
-        if (const DesktopVideoDevice* desktopVideoDevice = dynamic_cast<const DesktopVideoDevice*>(d))
-        {
-            const QList<QScreen*> screens = QGuiApplication::screens();
-            if (desktopVideoDevice->qtScreen() < screens.size())
-            {
-                m_devicePixelRatio = screens[desktopVideoDevice->qtScreen()]->devicePixelRatio();
-            }
-        }
+        return static_cast<float>(m_view->devicePixelRatioF());
     }
 
     void QTGLVideoDevice::redraw() const
