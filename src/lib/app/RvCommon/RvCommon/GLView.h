@@ -97,6 +97,7 @@ namespace Rv
         bool m_stopProcessingEvents;
         void* m_syncThreadData;
         QOpenGLContext* m_sharedContext;
+        float m_lastDevicePixelRatio{0.0f};
     };
 
 } // namespace Rv

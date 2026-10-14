@@ -309,6 +309,8 @@ namespace Rv
 
     void GLView::resizeGL(int w, int h)
     {
+        m_lastDevicePixelRatio = devicePixelRatio();
+
         if (m_doc)
             m_doc->viewSizeChanged(w, h);
 #ifdef PLATFORM_WINDOWS
@@ -360,6 +362,17 @@ namespace Rv
 
         IPCore::Session* session = m_doc->session();
         bool debug = IPCore::debugProfile && session;
+
+        // When only the device pixel ratio changes (e.g. when the window lands on
+        // a screen with a different scale factor without changing its logical size)
+        // QOpenGLWidget recreates its FBO at the new device size but does not
+        // call resizeGL(). So we do that here so the session flushes its image FBOs
+        // and refreshes the output device size; otherwise the image stays at the old
+        // size until the user resizes the window.
+        if (devicePixelRatio() != m_lastDevicePixelRatio)
+        {
+            resizeGL(width(), height());
+        }
 
         if (!m_postFirstNonEmptyRender && session && session->postFirstNonEmptyRender())
         {
