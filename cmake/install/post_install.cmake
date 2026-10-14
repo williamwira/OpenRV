@@ -46,8 +46,15 @@ IF(CMAKE_INSTALL_PREFIX)
       ${_all_installed_files}
     )
       STRING(TOLOWER "${_file}" _file_lower)
+      IF(APPLE)
+        # MacOS: Split paths with "_codesignature" folder, as that folder's string yielded a false positive match for the design component in QT_GPL_COMPONENTS.
+        STRING(
+          REGEX
+          REPLACE "_codesignature.*" "" _file_lower "${_file_lower}"
+        )
+      ENDIF()
       IF("${_file_lower}" MATCHES "${QT_GPL_COMPONENT}")
-        MESSAGE(FATAL_ERROR "Was not expecting the installation of the followin file: '${_file}'")
+        MESSAGE(FATAL_ERROR "Was not expecting the installation of the following file: '${_file}', which matches Qt component '${QT_GPL_COMPONENT}'")
       ENDIF()
     ENDFOREACH()
   ENDFOREACH()
